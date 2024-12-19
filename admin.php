@@ -135,7 +135,7 @@ if(isset($_GET['getArticle'])) {
 <body class="font-poppins flex">
    
     <nav id="sidebar" class="bg-[#056EE6] h-screen sticky top-0 left-0 py-6 font-[sans-serif] overflow-auto">
-        <div class="flex flex-col items-center cursor-pointer px-4" onclick="window.location.href = 'index.html'">
+        <div class="flex flex-col items-center cursor-pointer px-4" onclick="window.location.href = 'index.php'">
           <img src='images/logo.jpg' class="w-12 h-12 rounded-full border-2 border-white" />
           <div class="mt-2 text-center">
             <p class="text-sm text-white mt-2"><?php echo $_SESSION['name_author'] ; ?></p>
