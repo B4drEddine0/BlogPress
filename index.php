@@ -20,7 +20,6 @@
   <div class="px-8 py-10 mx-auto lg:max-w-screen-xl sm:max-w-xl md:max-w-full sm:px-12 md:px-16 lg:py-20 sm:py-16">
     <div class="grid gap-x-8 gap-y-12 sm:gap-y-16 md:grid-cols-2 lg:grid-cols-3">
       <?php 
-      // Fetch articles from the database
       $query = "SELECT create_dat, title, content FROM article";
       $result = mysqli_query($conn, $query);
       ?>
