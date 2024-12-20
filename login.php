@@ -1,5 +1,5 @@
 <?php
- 
+session_start();
 include('connexion.php');
 
 $email = $password = $errorMessage = '';

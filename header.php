@@ -13,7 +13,6 @@
         <div class="flex lg:flex-1 lg:justify-end">
             <?php if(isset($_SESSION['Author_id'])): ?>
                 <a href="admin.php" class="text-sm font-semibold leading-6 text-gray-900 mr-4 hover:text-indigo-600">Dashboard</a>
-                <a href="logout.php" class="text-sm font-semibold leading-6 text-gray-900 hover:text-indigo-600">Logout</a>
             <?php else: ?>
                 <a href="login.php" class="text-sm font-semibold leading-6 text-gray-900 mr-4 hover:text-indigo-600">Log in</a>
                 <a href="signUP.php" class="text-sm font-semibold leading-6 text-gray-900 hover:text-indigo-600">Sign up</a>

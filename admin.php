@@ -1,7 +1,13 @@
 <?php 
 session_start();
+
+if (!isset($_SESSION['Author_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 include ("connexion.php");
-$query = "SELECT * FROM article";
+$query = "SELECT * FROM article WHERE Author_id = " . $_SESSION['Author_id'];
 $result = mysqli_query($conn, $query);
 
 if (!$result) {
@@ -23,12 +29,10 @@ if (isset($_POST['SubBtn'])) {
         } else {
             echo "Error: " . $sql . "<br>" . $conn->error;
         }
-        }else {
-        
         }
 
         if (isset($_POST['delete'])) {
-            $titleToDelete = $_POST['titleToDelete'] ?? '';
+            $titleToDelete = $_POST['titleToDelete'];
     
             if (!empty($titleToDelete)) {
                 $stmt = $conn->prepare("DELETE FROM article WHERE title = ?");
@@ -46,9 +50,9 @@ if (isset($_POST['SubBtn'])) {
             }
         }
     
-        $resultat = $conn->query("SELECT title FROM article");
+        $resultat = $conn->query("SELECT title FROM article WHERE Author_id = " . $_SESSION['Author_id']);
         
-        $total_art_result = $conn->query('SELECT COUNT(id_art) FROM article');
+        $total_art_result = $conn->query('SELECT COUNT(id_art) FROM article WHERE Author_id = ' . $_SESSION['Author_id']);
         $total_art = $total_art_result->fetch_assoc();
         $total_art = $total_art['COUNT(id_art)'];
 
@@ -56,48 +60,47 @@ if (isset($_POST['SubBtn'])) {
         $total_vues = $total_vues_result->fetch_assoc();
         $total_vues = $total_vues['total_views'];
 
-        $total_comt_result = $conn->query('SELECT COUNT(id_art) FROM article');
+        $total_comt_result = $conn->query('SELECT COUNT(*) as total FROM Comment WHERE id_art IN (SELECT id_art FROM article WHERE Author_id = ' . $_SESSION['Author_id'] . ')');
         $total_comt = $total_comt_result->fetch_assoc();
-        $total_comt = $total_comt['COUNT(id_art)'];
+        $total_comt = $total_comt['total'];
 
         $total_likes_result = $conn->query('SELECT SUM(likes) as total_likes FROM article WHERE Author_id = ' . $_SESSION['Author_id']);
         $total_likes = $total_likes_result->fetch_assoc();
         $total_likes = $total_likes['total_likes'];
 
+
+
+        if (isset($_POST['update'])) {
+            $updatedTitle = $_POST['updatedTitle'];
+            $updatedContent = $_POST['updatedContent'];
+            $originalTitle = $_POST['originalTitle'];
+        
+            $stmt = $conn->prepare("UPDATE article SET title = ?, content = ? WHERE title = ?");
+            $stmt->bind_param("sss", $updatedTitle, $updatedContent, $originalTitle);
+        
+            if ($stmt->execute()) {
+                echo "<script>alert('Article updated successfully!'); window.location.href = '" . $_SERVER['PHP_SELF'] . "';</script>";
+            } else {
+                echo "<script>alert('Error updating article');</script>";
+            }
+            $stmt->close();
+        }
+
+        
+        if(isset($_POST['comment_id'])) {
+            $comment_id = $_POST['comment_id'];
+            
+            $stmt = $conn->prepare("DELETE FROM Comment WHERE cmt_id = ?");
+            $stmt->bind_param("i", $comment_id);
+            
+            if($stmt->execute()) {
+                header("Location: admin.php");
+                exit;
+            } else {
+                echo "Error deleting comment";
+            }
+        }
 ?>
-
-
-<?php
-if (isset($_POST['update'])) {
-    $updatedTitle = $_POST['updatedTitle'];
-    $updatedContent = $_POST['updatedContent'];
-    $originalTitle = $_POST['originalTitle'];
-
-    $stmt = $conn->prepare("UPDATE article SET title = ?, content = ? WHERE title = ?");
-    $stmt->bind_param("sss", $updatedTitle, $updatedContent, $originalTitle);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Article updated successfully!'); window.location.href = '" . $_SERVER['PHP_SELF'] . "';</script>";
-    } else {
-        echo "<script>alert('Error updating article');</script>";
-    }
-    $stmt->close();
-}
-?>
-<?php
-if(isset($_GET['getArticle'])) {
-    $title = $_GET['title'];
-    $stmt = $conn->prepare("SELECT content FROM article WHERE title = ?");
-    $stmt->bind_param("s", $title);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if($row = $result->fetch_assoc()) {
-        echo json_encode(['content' => $row['content']]);
-    }
-    exit;
-}
-?>
-
 
 
 
@@ -161,7 +164,7 @@ if(isset($_GET['getArticle'])) {
             </a>
           </li>
           <li>
-            <a href="javascript:void(0)" class="text-white text-sm flex flex-col items-center hover:bg-[#0C62C5] rounded px-4 py-5 transition-all">
+            <a href="javascript:void(0)" id="com-btn" class="text-white text-sm flex flex-col items-center hover:bg-[#0C62C5] rounded px-4 py-5 transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 mb-3" viewBox="0 0 16 16">
                 <path d="M13 .5H3A2.503 2.503 0 0 0 .5 3v10A2.503 2.503 0 0 0 3 15.5h10a2.503 2.503 0 0 0 2.5-2.5V3A2.503 2.503 0 0 0 13 .5ZM14.5 13a1.502 1.502 0 0 1-1.5 1.5H3A1.502 1.502 0 0 1 1.5 13v-.793l3.5-3.5 1.647 1.647a.5.5 0 0 0 .706 0L10.5 7.207V8a.5.5 0 0 0 1 0V6a.502.502 0 0 0-.5-.5H9a.5.5 0 0 0 0 1h.793L7 9.293 5.354 7.647a.5.5 0 0 0-.707 0l-3.5 3.5v.793a1.502 1.502 0 0 1 1.5-1.5h10a1.502 1.502 0 0 1 1.5 1.5z" />
               </svg>
@@ -169,7 +172,7 @@ if(isset($_GET['getArticle'])) {
             </a>
           </li>
           <div class="mt-2 text-center">
-            <p class="text-xm text-gray-300 mt-0.5">Logout</p>
+            <a href="logout.php" class="text-xm text-gray-300 mt-0.5 hover:text-white cursor-pointer">Logout</a>
           </div>
         </ul>
       </nav>
@@ -203,7 +206,7 @@ if(isset($_GET['getArticle'])) {
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-xl font-semibold">Total Comments</h2>
-          <p class="text-gray-500">25</p>
+          <p class="text-gray-500"><?php echo $total_comt; ?></p>
         </div>
         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-8 h-8 text-yellow-600" viewBox="0 0 16 16"><path d="M5 3h6v2H5zM3 7h10v2H3zM3 11h10v2H3zM5 15h6v2H5z"/></svg>
       </div>
@@ -216,7 +219,7 @@ if(isset($_GET['getArticle'])) {
           <p class="text-gray-500"><?php echo $total_likes; ?></p>
         </div>
         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-8 h-8 text-red-600" viewBox="0 0 16 16"><path d="M5 3h6v2H5zM3 7h10v2H3zM3 11h10v2H3zM5 15h6v2H5z"/></svg>
-      </div>
+        </div>
     </div>
   </div>
 
@@ -330,7 +333,7 @@ if(isset($_GET['getArticle'])) {
             </div>
             <div class="px-3 py-4 flex justify-center">
                 <table class="w-full text-md bg-white shadow-md rounded mb-4">
-                    <tbody class="questionsContainer">
+                    <tbody class="ArtContainer">
                         <tr class="border-b">
                             <th class="text-left p-3 px-28">Titre</th>
                             <th class="text-left p-3 px-28">Vues</th>
@@ -346,6 +349,7 @@ if(isset($_GET['getArticle'])) {
                                 echo "<td class='p-3 px-5'><input type='text' value='" . htmlspecialchars($row['views']) . "' disabled class='bg-transparent border-b-2 border-gray-300 py-2'></td>";
                                 echo "<td class='p-3 px-5'><input type='text' value='" . htmlspecialchars($row['likes']) . "' disabled class='bg-transparent border-b-2 border-gray-300 py-2'></td>";
                                 echo "<td class='p-3 px-5'><input type='text' value='" . htmlspecialchars($row['create_dat']) . "' disabled class='bg-transparent border-b-2 border-gray-300 py-2'></td>";
+                                echo "<input type='hidden' class='article-content' value='" . htmlspecialchars($row['content']) . "'>";
                                 echo "</tr>";
                             }
                             ?>
@@ -390,41 +394,58 @@ if(isset($_GET['getArticle'])) {
             </div>
         </div>
 
-        <!-- <div id="Comment_gest" class="fixed z-10 inset-0 overflow-y-auto hidden">
-            <div class="flex items-center justify-center min-h-screen">
-                <div class="bg-white w-1/2 p-6 rounded shadow-md">
-                    <div class="flex justify-end">
-                    
-                        <button id="closeGestForm" class="text-gray-700 hover:text-red-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <h2 class="text-2xl font-bold mb-4 text-[#056EE6]">Add Question</h2>
-    
-                    <form id="CommentsForm" method="post">
-                        <div class="mb-4">
-                            <label for="QuizTitre" class="block text-gray-700 text-sm font-bold mb-2">Quiz associé</label>
-                            <select id="QuizTitre" name="QuizTitre" class="w-full p-2 border rounded-md focus:outline-none focus:border-blue-500">
-                                
-                            </select>
-                        </div>
-
-                    
-                        <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
-                            Add
-                        </button>
-                    </form>
-                    
+        <div id="Comments-content" class="hidden">
+            <div class="text-gray-900">
+                <div class="p-4 flex justify-between">
+                    <h1 class="text-3xl font-bold">Comments Management</h1>
+                </div>
+                <div class="px-3 py-4 flex justify-center">
+                    <table class="w-full text-md bg-white shadow-md rounded mb-4">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left p-3 px-5">Visitor</th>
+                                <th class="text-left p-3 px-5">Email</th>
+                                <th class="text-left p-3 px-5">Article</th>
+                                <th class="text-left p-3 px-5">Comment</th>
+                                <th class="text-left p-3 px-5">Date</th>
+                                <th class="text-left p-3 px-5">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $comments_query = "SELECT c.*, v.name_visit, v.email, a.title as article_title 
+                                           FROM Comment c 
+                                           JOIN Visitor v ON c.Visit_id = v.Visit_id 
+                                           JOIN Article a ON c.id_art = a.id_art 
+                                           WHERE a.Author_id = " . $_SESSION['Author_id'] . "
+                                           ORDER BY c.create_dat DESC";
+                            $comments_result = $conn->query($comments_query);
+                            
+                            while ($comment = $comments_result->fetch_assoc()):
+                            ?>
+                            <tr class="border-b hover:bg-orange-100">
+                                <td class="p-3 px-5"><?php echo htmlspecialchars($comment['name_visit']); ?></td>
+                                <td class="p-3 px-5"><?php echo htmlspecialchars($comment['email']); ?></td>
+                                <td class="p-3 px-5"><?php echo htmlspecialchars($comment['article_title']); ?></td>
+                                <td class="p-3 px-5"><?php echo htmlspecialchars(substr($comment['content'], 0, 50)) . '...'; ?></td>
+                                <td class="p-3 px-5"><?php echo date('Y-m-d H:i', strtotime($comment['create_dat'])); ?></td>
+                                <td class="p-3 px-5">
+                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this comment?');">
+                                        <input type="hidden" name="comment_id" value="<?php echo $comment['cmt_id']; ?>">
+                                        <button type="submit" class="text-red-500 hover:text-red-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div> -->
-
-
-        
+        </div>
 
     </main>
 
@@ -441,6 +462,8 @@ if(isset($_GET['getArticle'])) {
         const dashBtn = document.getElementById('dash-btn');
         const ArticleContent = document.getElementById('Article-content');
         const ArtBtn = document.getElementById('Art-btn');
+        const comBtn = document.getElementById('com-btn');
+        const CommentsContent = document.getElementById('Comments-content');
         
         openAddFormButton.addEventListener('click', () => {
             AddFormModal.classList.remove('hidden');
@@ -459,50 +482,59 @@ if(isset($_GET['getArticle'])) {
         });
 
         dashBtn.addEventListener('click',()=>{
-            dashBtn.style.backgroundColor= '#0C62C5';
-            ArtBtn.style.backgroundColor='';
+            dashBtn.style.backgroundColor = '#0C62C5';
+            ArtBtn.style.backgroundColor = '';
+            comBtn.style.backgroundColor = '';
             ArticleContent.classList.add('hidden');
-
+            CommentsContent.classList.add('hidden');
         });
         ArtBtn.addEventListener('click',()=>{
-            ArtBtn.style.backgroundColor='#0C62C5';
-            dashBtn.style.backgroundColor='';
+            ArtBtn.style.backgroundColor = '#0C62C5';
+            dashBtn.style.backgroundColor = '';
+            comBtn.style.backgroundColor = '';
             ArticleContent.classList.remove('hidden');
-        })
+            CommentsContent.classList.add('hidden');
+        });
+        comBtn.addEventListener('click',()=>{
+            comBtn.style.backgroundColor = '#0C62C5';
+            dashBtn.style.backgroundColor = '';
+            ArtBtn.style.backgroundColor = '';
+            ArticleContent.classList.add('hidden');
+            CommentsContent.classList.remove('hidden');
+        });
+
+
+        function toggleEditModal(show) {
+        const modal = document.getElementById('editModal');
+        modal.style.display = show ? 'flex' : 'none';
+        
+        if (!show) {
+            document.getElementById('titleToEdit').value = '';
+            document.getElementById('updatedTitle').value = '';
+            document.getElementById('updatedContent').value = '';
+        }
+        }
+
+        function loadArticleContent(title) {
+            if (!title) return;
+            
+            const articleRows = document.querySelectorAll('.ArtContainer tr');
+            articleRows.forEach(row => {
+                const titleInput = row.querySelector('input[type="text"]');
+                if (titleInput && titleInput.value === title) {
+                    document.getElementById('updatedTitle').value = title;
+                    const contentInput = row.querySelector('.article-content');
+                    document.getElementById('updatedContent').value = contentInput.value;
+                }
+            });
+        }
+
+        editBtn.addEventListener('click', () => {
+            toggleEditModal(true);
+        });
 
         </script>
 
-
-<script>
-function toggleEditModal(show) {
-    const modal = document.getElementById('editModal');
-    modal.style.display = show ? 'flex' : 'none';
-    
-    if (!show) {
-        document.getElementById('titleToEdit').value = '';
-        document.getElementById('updatedTitle').value = '';
-        document.getElementById('updatedContent').value = '';
-    }
-}
-
-function loadArticleContent(title) {
-    if (!title) return;
-    
-    document.getElementById('updatedTitle').value = title;
-    
-    fetch(`admin.php?getArticle=1&title=${encodeURIComponent(title)}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('updatedContent').value = data.content;
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-const editButton = document.getElementById('editBtn');
-editButton.addEventListener('click', () => {
-    toggleEditModal(true);
-});
-</script>
 
 </body>
 </html>

@@ -46,7 +46,8 @@ $stmt->execute();
             <div class="max-w-3xl mx-auto">
                 <div class="mt-3 bg-white rounded-b lg:rounded-b-none lg:rounded-r flex flex-col justify-between leading-normal">
                     <div class="">
-                        <h1 class="text-gray-900 font-bold text-4xl mb-4"><?php echo htmlspecialchars($article['title']); ?></h1>
+                        <h1 class="text-gray-900 font-bold text-4xl mb-4"><?-èè_-_-è_è_è69
+                         echo htmlspecialchars($article['title']); ?></h1>
                         
                         <div class="py-5 text-sm font-regular text-gray-900 flex">
                             <span class="mr-3 flex flex-row items-center">
@@ -72,6 +73,20 @@ $stmt->execute();
                                 </svg>
                                 <span><?php echo $article['views']; ?> views</span>
                             </span>
+
+                            <span class="flex flex-row items-center ml-4">
+                                <?php
+                                $liked = isset($_SESSION['liked_articles']) && in_array($article['id_art'], $_SESSION['liked_articles']);
+                                ?>
+                                <button id="likeButton" 
+                                        class="flex items-center space-x-2 <?php echo $liked ? 'text-red-500' : 'text-gray-500'; ?> hover:text-red-500 transition-colors"
+                                        onclick="toggleLike(<?php echo $article['id_art']; ?>)">
+                                    <svg class="w-5 h-5" fill="<?php echo $liked ? 'currentColor' : 'none'; ?>" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                    <span id="likeCount"><?php echo $article['likes']; ?></span>
+                                </button>
+                            </span>
                         </div>
                         <hr>
                         <p class="text-base leading-8 my-5">
@@ -87,6 +102,106 @@ $stmt->execute();
         </div>
     </main>
 
+    <div class="max-w-3xl mx-auto mt-8" id="comments">
+        <h2 class="text-2xl font-bold mb-4">Comments</h2>
+        
+        <!-- Comment Form -->
+        <form action="add_comment.php" method="POST" class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" name="name" id="name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" id="email" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+                <textarea name="content" id="content" rows="4" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+            <input type="hidden" name="article_id" value="<?php echo $article['id_art']; ?>">
+            <button type="submit"
+                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                Post Comment
+            </button>
+        </form>
+
+        <!-- Comments List -->
+        <div class="space-y-6">
+            <?php
+            // Fetch comments for this article
+            $comments_query = "SELECT c.*, v.name_visit, v.email, c.create_dat 
+                             FROM Comment c 
+                             JOIN Visitor v ON c.Visit_id = v.Visit_id 
+                             WHERE c.id_art = ? 
+                             ORDER BY c.create_dat DESC";
+            $stmt = $conn->prepare($comments_query);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $comments = $stmt->get_result();
+            
+            while ($comment = $comments->fetch_assoc()):
+            ?>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-indigo-100 rounded-full w-10 h-10 flex items-center justify-center">
+                                <span class="text-indigo-800 font-semibold">
+                                    <?php echo strtoupper(substr($comment['name_visit'], 0, 1)); ?>
+                                </span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900"><?php echo htmlspecialchars($comment['name_visit']); ?></h3>
+                                <p class="text-sm text-gray-500">
+                                    <?php echo date('F j, Y \a\t g:i a', strtotime($comment['create_dat'])); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-700"><?php echo nl2br(htmlspecialchars($comment['content'])); ?></p>
+                </div>
+            <?php endwhile; ?>
+        </div>
+    </div>
+
     <?php include('footer.php'); ?>
+
+    <script>
+    function toggleLike(articleId) {
+        fetch('like_article.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'article_id=' + articleId
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                const likeButton = document.getElementById('likeButton');
+                const likeCount = document.getElementById('likeCount');
+                const svg = likeButton.querySelector('svg');
+                
+                if(data.action === 'liked') {
+                    likeButton.classList.remove('text-gray-500');
+                    likeButton.classList.add('text-red-500');
+                    svg.setAttribute('fill', 'currentColor');
+                    likeCount.textContent = parseInt(likeCount.textContent) + 1;
+                } else {
+                    likeButton.classList.remove('text-red-500');
+                    likeButton.classList.add('text-gray-500');
+                    svg.setAttribute('fill', 'none');
+                    likeCount.textContent = parseInt(likeCount.textContent) - 1;
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    </script>
 </body>
 </html>
