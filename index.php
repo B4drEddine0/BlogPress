@@ -26,9 +26,8 @@ include ('connexion.php');
             <div class="px-8 py-10 mx-auto lg:max-w-screen-xl sm:max-w-xl md:max-w-full sm:px-12 md:px-16 lg:py-20 sm:py-16">
                 <div class="grid gap-x-8 gap-y-12 sm:gap-y-16 md:grid-cols-2 lg:grid-cols-3">
                     <?php 
-                    $query = "SELECT a.id_art, a.create_dat, a.title, a.content, a.Author_id, a.views, au.name_author 
-                                FROM article a 
-                                JOIN author au ON a.Author_id = au.Author_id 
+                    $query = "SELECT a.id_art, a.create_dat, a.title, a.content, a.views
+                                FROM article a
                                 ORDER BY a.views DESC";
                     $result = mysqli_query($conn, $query);
                     ?>
@@ -54,7 +53,7 @@ include ('connexion.php');
                                     </h2>
                                 </a>
                                 <p class="mb-4 text-gray-700 dark:text-gray-300">
-                                    <?php echo htmlspecialchars(substr($article['content'], 0, 150)) . '...'; ?>
+                                    <?php echo htmlspecialchars(substr($article['content'], 0, 15)) . '...'; ?>
                                 </p>
                                 <div class="flex items-center justify-between">
                                     <a href="details.php?id=<?php echo $article['id_art']; ?>" 

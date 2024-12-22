@@ -1,12 +1,14 @@
 <?php 
 session_start();
+include ("connexion.php");
+
 
 if (!isset($_SESSION['Author_id'])) {
     header("Location: login.php");
     exit;
 }
 
-include ("connexion.php");
+
 $query = "SELECT * FROM article WHERE Author_id = " . $_SESSION['Author_id'];
 $result = mysqli_query($conn, $query);
 
@@ -27,7 +29,7 @@ if (isset($_POST['SubBtn'])) {
             header("Location: " . $_SERVER['PHP_SELF']);
             exit;
         } else {
-            echo "Error: " . $sql . "<br>" . $conn->error;
+            echo "Error: " . $conn->error;
         }
         }
 
@@ -157,16 +159,18 @@ if (isset($_POST['SubBtn'])) {
           </li>
           <li>
             <a href="javascript:void(0)" id="Art-btn" class="text-white text-sm flex flex-col items-center hover:bg-[#0C62C5] rounded px-4 py-5 transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 mb-3" viewBox="0 0 511.414 511.414">
-                <path d="M497.695 108.838a16.002 16.002 0 0 0-9.92-14.8L261.787 1.2a16.003 16.003 0 0 0-12.16 0L23.639 94.038a16 16 0 0 0-9.92 14.8v293.738a16 16 0 0 0 9.92 14.8l225.988 92.838a15.947 15.947 0 0 0 12.14-.001c.193-.064-8.363 3.445 226.008-92.837a16 16 0 0 0 9.92-14.8zm-241.988 76.886-83.268-34.207L352.39 73.016l88.837 36.495zm-209.988-51.67 71.841 29.513v83.264c0 8.836 7.164 16 16 16s16-7.164 16-16v-70.118l90.147 37.033v257.797L45.719 391.851zM255.707 33.297l55.466 22.786-179.951 78.501-61.035-25.074zm16 180.449 193.988-79.692v257.797l-193.988 79.692z" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 mb-3" viewBox="0 0 24 24">
+                <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                <path d="M14 17H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
               </svg>
               <span>Articles</span>
             </a>
           </li>
           <li>
             <a href="javascript:void(0)" id="com-btn" class="text-white text-sm flex flex-col items-center hover:bg-[#0C62C5] rounded px-4 py-5 transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 mb-3" viewBox="0 0 16 16">
-                <path d="M13 .5H3A2.503 2.503 0 0 0 .5 3v10A2.503 2.503 0 0 0 3 15.5h10a2.503 2.503 0 0 0 2.5-2.5V3A2.503 2.503 0 0 0 13 .5ZM14.5 13a1.502 1.502 0 0 1-1.5 1.5H3A1.502 1.502 0 0 1 1.5 13v-.793l3.5-3.5 1.647 1.647a.5.5 0 0 0 .706 0L10.5 7.207V8a.5.5 0 0 0 1 0V6a.502.502 0 0 0-.5-.5H9a.5.5 0 0 0 0 1h.793L7 9.293 5.354 7.647a.5.5 0 0 0-.707 0l-3.5 3.5v.793a1.502 1.502 0 0 1 1.5-1.5h10a1.502 1.502 0 0 1 1.5 1.5z" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-5 h-5 mb-3" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                <path d="M7 9h10v2H7zm0-3h10v2H7z"/>
               </svg>
               <span>Comments</span>
             </a>
@@ -278,7 +282,7 @@ if (isset($_POST['SubBtn'])) {
                             </svg>
                         </button>
                     </div>
-                    <h2 class="text-2xl font-bold mb-4 text-[#056EE6]">Add Article</h2>
+                    <h2 class="text-2xl font-bold mb-4 text-[#056EE6]">Delete Article</h2>
     
                     <form method="POST" action="">
                     <div class="mb-4">

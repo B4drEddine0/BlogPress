@@ -2,6 +2,7 @@
 session_start();
 include ('connexion.php');
 
+
 if (!isset($_GET['id'])) {
     header('Location: index.php');
     exit;
@@ -28,6 +29,35 @@ $update_views = "UPDATE article SET views = views + 1 WHERE id_art = ?";
 $stmt = $conn->prepare($update_views);
 $stmt->bind_param("i", $id);
 $stmt->execute();
+
+
+if(isset($_POST['content'])) {
+    $name = $_POST['name'];
+    $email = $_POST['email'];
+    $content = $_POST['content'];
+    $article_id = $_POST['article_id'];
+    
+    $insert_visitor = "INSERT INTO Visitor (name_visit, email) VALUES (?, ?)";
+    $stmt = $conn->prepare($insert_visitor);
+    $stmt->bind_param("ss", $name, $email);
+    $stmt->execute();
+    $visitor_id = $conn->insert_id;
+    
+    $insert_comment = "INSERT INTO Comment (Visit_id, id_art, content) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($insert_comment);
+    $stmt->bind_param("iis", $visitor_id, $article_id, $content);
+    $stmt->execute();
+    
+    header("Location: details.php?id=" . $article_id . "#comments");
+    exit();
+}
+
+if(isset($_POST['toggle_like'])) {
+    $article_id = $_POST['article_id'];
+    $conn->query("UPDATE article SET likes = likes + 1 WHERE id_art = " . $article_id);
+    header("Location: details.php?id=" . $article_id);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -46,8 +76,7 @@ $stmt->execute();
             <div class="max-w-3xl mx-auto">
                 <div class="mt-3 bg-white rounded-b lg:rounded-b-none lg:rounded-r flex flex-col justify-between leading-normal">
                     <div class="">
-                        <h1 class="text-gray-900 font-bold text-4xl mb-4"><?-èè_-_-è_è_è69
-                         echo htmlspecialchars($article['title']); ?></h1>
+                        <h1 class="text-gray-900 font-bold text-4xl mb-4"><? echo htmlspecialchars($article['title']); ?></h1>
                         
                         <div class="py-5 text-sm font-regular text-gray-900 flex">
                             <span class="mr-3 flex flex-row items-center">
@@ -78,14 +107,15 @@ $stmt->execute();
                                 <?php
                                 $liked = isset($_SESSION['liked_articles']) && in_array($article['id_art'], $_SESSION['liked_articles']);
                                 ?>
-                                <button id="likeButton" 
-                                        class="flex items-center space-x-2 <?php echo $liked ? 'text-red-500' : 'text-gray-500'; ?> hover:text-red-500 transition-colors"
-                                        onclick="toggleLike(<?php echo $article['id_art']; ?>)">
-                                    <svg class="w-5 h-5" fill="<?php echo $liked ? 'currentColor' : 'none'; ?>" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                    </svg>
-                                    <span id="likeCount"><?php echo $article['likes']; ?></span>
-                                </button>
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="article_id" value="<?php echo $article['id_art']; ?>">
+                                    <button type="submit" name="toggle_like" class="flex items-center space-x-2 <?php echo $liked ? 'text-red-500' : 'text-gray-500'; ?> hover:text-red-500 transition-colors">
+                                        <svg class="w-5 h-5" fill="<?php echo $liked ? 'currentColor' : 'none'; ?>" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                        </svg>
+                                        <span><?php echo $article['likes']; ?></span>
+                                    </button>
+                                </form>
                             </span>
                         </div>
                         <hr>
@@ -105,8 +135,7 @@ $stmt->execute();
     <div class="max-w-3xl mx-auto mt-8" id="comments">
         <h2 class="text-2xl font-bold mb-4">Comments</h2>
         
-        <!-- Comment Form -->
-        <form action="add_comment.php" method="POST" class="mb-8 bg-white p-6 rounded-lg shadow-md">
+        <form method="POST" class="mb-8 bg-white p-6 rounded-lg shadow-md">
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -131,11 +160,9 @@ $stmt->execute();
             </button>
         </form>
 
-        <!-- Comments List -->
         <div class="space-y-6">
             <?php
-            // Fetch comments for this article
-            $comments_query = "SELECT c.*, v.name_visit, v.email, c.create_dat 
+            $comments_query = "SELECT c.*, v.name_visit
                              FROM Comment c 
                              JOIN Visitor v ON c.Visit_id = v.Visit_id 
                              WHERE c.id_art = ? 
@@ -170,38 +197,5 @@ $stmt->execute();
     </div>
 
     <?php include('footer.php'); ?>
-
-    <script>
-    function toggleLike(articleId) {
-        fetch('like_article.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'article_id=' + articleId
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === 'success') {
-                const likeButton = document.getElementById('likeButton');
-                const likeCount = document.getElementById('likeCount');
-                const svg = likeButton.querySelector('svg');
-                
-                if(data.action === 'liked') {
-                    likeButton.classList.remove('text-gray-500');
-                    likeButton.classList.add('text-red-500');
-                    svg.setAttribute('fill', 'currentColor');
-                    likeCount.textContent = parseInt(likeCount.textContent) + 1;
-                } else {
-                    likeButton.classList.remove('text-red-500');
-                    likeButton.classList.add('text-gray-500');
-                    svg.setAttribute('fill', 'none');
-                    likeCount.textContent = parseInt(likeCount.textContent) - 1;
-                }
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-    </script>
 </body>
 </html>
